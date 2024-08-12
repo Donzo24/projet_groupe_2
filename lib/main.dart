@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_builder_validators/localization/l10n.dart';
 import 'package:get/route_manager.dart';
 import 'package:projet_image/screens/button.dart';
 import 'package:projet_image/screens/home_page.dart';

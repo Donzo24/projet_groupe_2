@@ -1,7 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
+import 'package:projet_image/models/phone.dart';
+import 'package:projet_image/screens/forms.dart';
+import 'package:projet_image/screens/index.dart';
+import 'package:projet_image/screens/login.dart';
+import 'package:projet_image/screens/parametre.dart';
+import 'package:http/http.dart' as http;
 
 class ScafoldWidget extends StatefulWidget {
   const ScafoldWidget({super.key});
@@ -71,13 +79,27 @@ class _ScafoldWidgetState extends State<ScafoldWidget>
         // leading: Icon(Icons.sort),
         title: Text("Fiteness App"),
         actions: [
-          Icon(Icons.person),
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              // Get.to(() {
+              //   return LoginPage();
+              // });
+
+              Get.to(() => FormPage(), transition: Transition.upToDown);
+            },
+          ),
           Padding(
             padding: EdgeInsets.only(
               right: 10,
               left: 10
             ),
-            child: Icon(Icons.linked_camera),
+            child: IconButton(
+              icon: Icon(Icons.linked_camera),
+              onPressed: () {
+                Get.to(() => IndexPage());
+              },
+            ),
           )
         ],
       ),
@@ -85,6 +107,15 @@ class _ScafoldWidgetState extends State<ScafoldWidget>
         child: Column(
           children: List.generate(3, (index) {
             return ListTile(
+              onTap: () {
+
+                Get.to(() => Parametre(titre: "Setting Page"));
+
+                // Get.off(() => Parametre());
+
+                // Get.offAll(() => Parametre());
+
+              },
               title: Text(menus[index]['titre']),
               leading: Icon(menus[index]['icon']),
             );
@@ -131,43 +162,61 @@ class _ScafoldWidgetState extends State<ScafoldWidget>
             child: SingleChildScrollView(
               child: Column(
                 children: List.generate(50, (index) {
-                  return Container(
-                    // height: 150,
-                    // width: double.infinity,
-                    // color: Colors.cyan,
-                    margin: EdgeInsets.all(10),
-                    child: Container(
-                      height: 60,
-                      width: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(80),
-                        image: DecorationImage(
-                          fit: BoxFit.cover,
-                          image: NetworkImage(
-                            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=3276&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                          )
-                        )
-                      ),
-                    )
-                  );
+                  return SizedBox();
                 }),
               ),
             )
           ),
-          Container(
-            color: Colors.white,
-            height: 200,
-            child: ListView(
-              shrinkWrap: true,
-                scrollDirection: Axis.vertical,
-                children: List.generate(20, (index) {
-                  return Container(
-                    height: 70,
-                    color: Colors.grey,
-                    margin: EdgeInsets.all(10),
+          FutureBuilder(
+            future: http.get(Uri.parse("https://api.restful-api.dev/objects")),
+            builder: (context, snapshot) {
+                if(snapshot.connectionState == ConnectionState.waiting) {
+                  // print("En cours");
+                } else if(snapshot.connectionState == ConnectionState.done) {
+                  // print("Terminer");
+                  var reponse = snapshot.data;
+
+                  // print(reponse!.statusCode);
+
+                  // print(reponse.body);
+
+                  var json = jsonDecode(reponse!.body) as List<dynamic>;
+
+                  // print(json);
+
+                  List<Phone> phones = [];
+
+                  for (var i = 0; i < json.length; i++) {
+                    phones.add(Phone.fromJson(json[i]));
+                  }
+
+                  return SizedBox(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: phones.map((phone) {
+                        return Card(
+                          child: ListTile(
+                            title: Text(phone.name),
+                            trailing: IconButton(
+                              icon: Icon(Icons.edit),
+                              onPressed: () {
+                                editPhone(phone: phone);
+                              },
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   );
-                }),
-              )
+                  
+                } else if(snapshot.hasError) {
+                  print("Une erreur s'est proudit");
+                }
+
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+            },
           ),
           createProfilPage(),
         ],
@@ -267,6 +316,27 @@ class _ScafoldWidgetState extends State<ScafoldWidget>
             ),
           );
         },
+      )
+    );
+  }
+  
+  void editPhone({required Phone phone}) {
+    print(phone.name);
+
+    Get.bottomSheet(
+      Container(
+        color: Colors.white,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(10),
+              child: FormBuilderTextField(
+                name: "nam",
+                initialValue: phone.name,
+              ),
+            )
+          ],
+        ),
       )
     );
   }
